@@ -10,40 +10,51 @@ permissions:
 
 jobs:
   windows:
+    name: Windows EXE
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller pillow requests
 
       - name: Build EXE
-  run: pyinstaller --noconfirm --onefile --windowed --name "MCTiersRankTool" --add-data "assets;assets" main.py
+        run: pyinstaller --noconfirm --onefile --windowed --name "MCTiersRankTool" --add-data "assets;assets" main.py
 
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCTiersRankTool-Windows
+          path: dist/MCTiersRankTool.exe
 
-      - name: Upload to Release
+      - name: Upload EXE to Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/MCTiersRankTool.exe
 
   linux:
+    name: Linux AppImage
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller pillow requests
@@ -55,14 +66,18 @@ jobs:
             --add-data "assets:assets" \
             main.py
 
-      - name: Make AppDir
+      - name: Prepare AppDir
         run: |
           mkdir -p AppDir/usr/bin
           mkdir -p AppDir/usr/share/applications
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
           cp dist/MCTiersRankTool AppDir/usr/bin/
-          cp assets/icons/overall.png AppDir/usr/share/icons/hicolor/256x256/apps/mctiersranktool.png
+
+          # Use an icon if you have one
+          if [ -f assets/icons/overall.png ]; then
+            cp assets/icons/overall.png AppDir/usr/share/icons/hicolor/256x256/apps/mctiersranktool.png
+          fi
 
           cat > AppDir/usr/share/applications/mctiersranktool.desktop <<EOF
           [Desktop Entry]
@@ -85,8 +100,13 @@ jobs:
           chmod +x appimagetool-x86_64.AppImage
           ./appimagetool-x86_64.AppImage AppDir
 
-      - name: Upload to Release
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCTiersRankTool-AppImage
+          path: "*.AppImage"
+
+      - name: Upload AppImage to Release
         uses: softprops/action-gh-release@v2
         with:
           files: "*.AppImage"
-     
